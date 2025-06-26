@@ -1,0 +1,74 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|c:\\users\\daniel.chambers\\source\\repos\\creativebudgeting\\creativebudgeting\\controllers\\budgetcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|solutionrelative:creativebudgeting\\controllers\\budgetcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|c:\\users\\daniel.chambers\\source\\repos\\creativebudgeting\\creativebudgeting\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|solutionrelative:creativebudgeting\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|c:\\users\\daniel.chambers\\source\\repos\\creativebudgeting\\creativebudgeting\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC96E678-5E6A-4001-995A-A030FA614A88}|CreativeBudgeting\\CreativeBudgeting.csproj|solutionrelative:creativebudgeting\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Models\\User.cs",
+              "RelativeDocumentMoniker": "CreativeBudgeting\\Models\\User.cs",
+              "ToolTip": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Models\\User.cs",
+              "RelativeToolTip": "CreativeBudgeting\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-25T02:38:03.023Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BudgetController.cs",
+              "DocumentMoniker": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Controllers\\BudgetController.cs",
+              "RelativeDocumentMoniker": "CreativeBudgeting\\Controllers\\BudgetController.cs",
+              "ToolTip": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Controllers\\BudgetController.cs",
+              "RelativeToolTip": "CreativeBudgeting\\Controllers\\BudgetController.cs",
+              "ViewState": "AgIAAGgAAAAAAAAAAIA4wH0AAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-25T02:35:53.849Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "WeatherForecastController.cs",
+              "DocumentMoniker": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Controllers\\WeatherForecastController.cs",
+              "RelativeDocumentMoniker": "CreativeBudgeting\\Controllers\\WeatherForecastController.cs",
+              "ToolTip": "C:\\Users\\daniel.chambers\\source\\repos\\CreativeBudgeting\\CreativeBudgeting\\Controllers\\WeatherForecastController.cs",
+              "RelativeToolTip": "CreativeBudgeting\\Controllers\\WeatherForecastController.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAgwDAAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-25T02:26:51.492Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

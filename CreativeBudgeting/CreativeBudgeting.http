@@ -1,0 +1,6 @@
+@CreativeBudgeting_HostAddress = http://localhost:5093
+
+GET {{CreativeBudgeting_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
