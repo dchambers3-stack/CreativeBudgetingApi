@@ -5,7 +5,7 @@
 namespace CreativeBudgeting.Migrations
 {
     /// <inheritdoc />
-    public partial class FixPendingChanges : Migration
+    public partial class UpdateModelForRenderDeployment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

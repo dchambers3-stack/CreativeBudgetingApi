@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CreativeBudgeting.Migrations
 {
     [DbContext(typeof(BudgetDbContext))]
-    [Migration("20250830025921_FixPendingChanges")]
-    partial class FixPendingChanges
+    [Migration("20250830030222_UpdateModelForRenderDeployment")]
+    partial class UpdateModelForRenderDeployment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

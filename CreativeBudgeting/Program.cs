@@ -150,6 +150,14 @@ namespace CreativeBudgeting
                 {
                     Console.WriteLine("Configuring Entity Framework with PostgreSQL...");
                     options.UseNpgsql(connectionString);
+                    
+                    // Suppress pending model changes warning for production deployment
+                    if (!builder.Environment.IsDevelopment())
+                    {
+                        options.ConfigureWarnings(warnings => 
+                            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+                    }
+                    
                     Console.WriteLine("Entity Framework configuration completed.");
                 }
                 else
