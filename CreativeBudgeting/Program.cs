@@ -30,31 +30,39 @@ namespace CreativeBudgeting
 
         public static async Task Main(string[] args)
         {
+            // Force disable HTTPS for Render deployment
+            Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "");
+            Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "10000"}");
+            
             var builder = WebApplication.CreateBuilder(args);
 
-            // For Render deployment, clear any HTTPS configuration
+            // For Render deployment, completely override any HTTPS configuration
             if (!builder.Environment.IsDevelopment())
             {
+                // Clear all Kestrel configuration from appsettings
+                builder.Configuration["Kestrel"] = null;
+                builder.Configuration["Kestrel:Endpoints:Http"] = null;
                 builder.Configuration["Kestrel:Endpoints:Https"] = null;
-                builder.WebHost.UseUrls($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "10000"}");
-            }
-
-            // Configure Kestrel for Render
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "10000");
-                // Clear any existing endpoints and only listen on HTTP
-                options.ListenAnyIP(port);
                 
-                // For Render deployment, disable HTTPS endpoints
-                if (!builder.Environment.IsDevelopment())
+                // Set explicit HTTP-only URL
+                var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+                builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+                
+                // Override any default Kestrel behavior
+                builder.WebHost.UseKestrel(options =>
                 {
-                    options.ConfigureEndpointDefaults(endpointOptions =>
-                    {
-                        endpointOptions.UseConnectionLogging();
-                    });
-                }
-            });
+                    options.ListenAnyIP(int.Parse(port));
+                });
+            }
+            else
+            {
+                // Configure Kestrel for local development
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "10000");
+                    options.ListenAnyIP(port);
+                });
+            }
 
             // Add services to the container
             builder.Services.AddEndpointsApiExplorer();
