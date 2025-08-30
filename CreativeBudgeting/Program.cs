@@ -56,38 +56,65 @@ namespace CreativeBudgeting
 
             // Database connection - Render provides DATABASE_URL environment variable
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+            
+            // Debug logging
+            Console.WriteLine($"DATABASE_URL environment variable: {(string.IsNullOrEmpty(connectionString) ? "NOT SET" : "SET")}");
 
             // If DATABASE_URL is not set, fall back to configuration
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                Console.WriteLine($"Using DefaultConnection from config: {(string.IsNullOrEmpty(connectionString) ? "NOT FOUND" : "FOUND")}");
             }
 
             // Convert Render's DATABASE_URL format to Npgsql connection string if needed
             if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
             {
-                // Render uses postgres:// but Npgsql expects postgresql://
+                Console.WriteLine("Converting postgres:// to postgresql://");
                 connectionString = connectionString.Replace("postgres://", "postgresql://");
             }
 
-            Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                Console.WriteLine("ERROR: No connection string available!");
+            }
+            else
+            {
+                Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
+            }
 
             // Configure Hangfire with PostgreSQL
-            builder.Services.AddHangfire(config =>
+            if (!string.IsNullOrEmpty(connectionString))
             {
-                if (!string.IsNullOrEmpty(connectionString))
+                try
                 {
-                    config.UsePostgreSqlStorage(connectionString);
+                    Console.WriteLine("Configuring Hangfire with PostgreSQL...");
+                    builder.Services.AddHangfire(config =>
+                    {
+                        config.UsePostgreSqlStorage(connectionString);
+                    });
+                    builder.Services.AddHangfireServer();
+                    Console.WriteLine("Hangfire configuration completed.");
                 }
-            });
-            builder.Services.AddHangfireServer();
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"ERROR configuring Hangfire: {ex.Message}");
+                    throw;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Skipping Hangfire configuration - no connection string");
+            }
 
             // Configure Entity Framework with PostgreSQL
             builder.Services.AddDbContext<BudgetDbContext>(options =>
             {
                 if (!string.IsNullOrEmpty(connectionString))
                 {
+                    Console.WriteLine("Configuring Entity Framework with PostgreSQL...");
                     options.UseNpgsql(connectionString);
+                    Console.WriteLine("Entity Framework configuration completed.");
                 }
                 else
                 {
@@ -151,20 +178,25 @@ namespace CreativeBudgeting
             {
                 try
                 {
+                    Console.WriteLine("Starting database initialization...");
                     var context = scope.ServiceProvider.GetRequiredService<BudgetDbContext>();
                     
+                    Console.WriteLine("Testing database connection...");
                     // Test database connection first
                     var canConnect = await context.Database.CanConnectAsync();
                     if (!canConnect)
                     {
                         app.Logger.LogError("Cannot connect to database. Check DATABASE_URL environment variable.");
+                        Console.WriteLine("Database connection test FAILED");
                         throw new InvalidOperationException("Database connection failed");
                     }
                     
+                    Console.WriteLine("Database connection test PASSED");
                     app.Logger.LogInformation("Database connection successful. Running migrations...");
                     await context.Database.MigrateAsync();
                     app.Logger.LogInformation("Database migrations completed successfully.");
 
+                    Console.WriteLine("Starting Hangfire job initialization...");
                     // Initialize Hangfire jobs
                     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
                     var globalMethodService = scope.ServiceProvider.GetRequiredService<GlobalMethodService>();
@@ -175,10 +207,15 @@ namespace CreativeBudgeting
                         "0 0 1 * *"
                     );
                     
+                    Console.WriteLine("Hangfire job initialization completed successfully.");
                     app.Logger.LogInformation("Hangfire jobs initialized successfully.");
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"Database/Hangfire initialization failed: {ex.Message}");
+                    Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    
                     app.Logger.LogError(ex, "Failed to initialize database or Hangfire jobs. Error: {ErrorMessage}", ex.Message);
                     
                     // Log connection string info (without sensitive data)
@@ -186,10 +223,12 @@ namespace CreativeBudgeting
                     if (string.IsNullOrEmpty(dbUrl))
                     {
                         app.Logger.LogError("DATABASE_URL environment variable is not set!");
+                        Console.WriteLine("DATABASE_URL environment variable is NOT SET!");
                     }
                     else
                     {
                         app.Logger.LogInformation("DATABASE_URL is set (length: {Length})", dbUrl.Length);
+                        Console.WriteLine($"DATABASE_URL is set (length: {dbUrl.Length})");
                     }
                     
                     // Don't exit the app, but log the error
