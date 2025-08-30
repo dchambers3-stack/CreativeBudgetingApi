@@ -77,9 +77,10 @@ namespace CreativeBudgeting
             // Database connection - Render provides DATABASE_URL environment variable
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
             
-            // Debug logging
+            // Debug logging - Force rebuild for Render
             Console.WriteLine($"DATABASE_URL environment variable: {(string.IsNullOrEmpty(connectionString) ? "NOT SET" : "SET")}");
-
+            Console.WriteLine("=== USING NEW CONNECTION STRING PARSING CODE ===");
+            
             // If DATABASE_URL is not set, fall back to configuration
             if (string.IsNullOrEmpty(connectionString))
             {
