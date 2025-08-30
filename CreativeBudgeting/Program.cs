@@ -15,8 +15,9 @@ namespace CreativeBudgeting
             // Configure Kestrel for Render
             builder.WebHost.ConfigureKestrel(options =>
             {
-                var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-                options.ListenAnyIP(int.Parse(port));
+                var portString = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+                var port = int.Parse(portString);
+                options.ListenAnyIP(port);
             });
 
             // Add services to the container
@@ -69,7 +70,7 @@ namespace CreativeBudgeting
                 connectionString = connectionString.Replace("postgres://", "postgresql://");
             }
 
-            Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString.Length ?? 0))}...");
+            Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
 
             // Configure Hangfire with PostgreSQL
             builder.Services.AddHangfire(config =>
