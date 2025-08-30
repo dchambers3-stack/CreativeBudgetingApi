@@ -16,19 +16,34 @@ namespace CreativeBudgeting.Controllers
         {
             _context = context;
         }
+        [HttpGet("health")]
+        public IActionResult HealthCheck()
+        {
+            return Ok(new { controller = "LookupsController", status = "healthy", timestamp = DateTime.UtcNow });
+        }
+
         [HttpGet("ticket-severities")]
         public async Task<IActionResult> GetTicketSeverities()
         {
-            var query = await _context.TicketSeverities.FirstOrDefaultAsync();
+            try
+            {
+                var severities = await _context.TicketSeverities
+                    .Select(s => new TicketSeverityDto
+                    {
+                        Id = s.Id,
+                        Value = s.Value
+                    })
+                    .OrderBy(s => s.Id) // Order by ID for consistent ordering
+                    .ToListAsync();
 
-            var severities = await _context.TicketSeverities
-                .Select(s => new TicketSeverityDto
-                {
-                    Id = s.Id,
-                    Value = s.Value
-                })
-                .ToListAsync();
-            return Ok(severities);
+                Console.WriteLine($"Retrieved {severities.Count} ticket severities");
+                return Ok(severities);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving ticket severities: {ex.Message}");
+                return StatusCode(500, new { message = "Failed to retrieve ticket severities", error = ex.Message });
+            }
         }
     }
     
