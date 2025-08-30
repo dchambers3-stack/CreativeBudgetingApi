@@ -30,48 +30,18 @@ namespace CreativeBudgeting
 
         public static async Task Main(string[] args)
         {
-            // Force disable HTTPS for Render deployment - aggressive approach
-            Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "");
-            Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORTS", "");
-            Environment.SetEnvironmentVariable("HTTPS_PORT", "");
-            Environment.SetEnvironmentVariable("ASPNETCORE_FORCESSL", "false");
-            
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-            Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://0.0.0.0:{port}");
-            Environment.SetEnvironmentVariable("HTTP_PORTS", port);
-            
             var builder = WebApplication.CreateBuilder(args);
 
-            // Completely disable HTTPS in production
+            // For production deployment (Render), configure port properly
             if (!builder.Environment.IsDevelopment())
             {
-                // Remove all Kestrel configuration
-                builder.Configuration.GetSection("Kestrel").GetChildren().ToList().ForEach(child => 
-                {
-                    builder.Configuration[child.Path] = null;
-                });
+                var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
                 
-                // Force HTTP-only configuration
+                // Clear any conflicting configuration
+                builder.Configuration["Kestrel"] = null;
+                
+                // Set simple HTTP-only URL
                 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-                
-                // Override Kestrel configuration completely
-                builder.WebHost.ConfigureKestrel(options =>
-                {
-                    options.Configure(builder.Configuration.GetSection("Kestrel"), reloadOnChange: false);
-                    options.ListenAnyIP(int.Parse(port), listenOptions =>
-                    {
-                        // Explicitly configure as HTTP only
-                    });
-                });
-            }
-            else
-            {
-                // Configure Kestrel for local development
-                builder.WebHost.ConfigureKestrel(options =>
-                {
-                    var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "10000");
-                    options.ListenAnyIP(port);
-                });
             }
 
             // Add services to the container
