@@ -30,28 +30,38 @@ namespace CreativeBudgeting
 
         public static async Task Main(string[] args)
         {
-            // Force disable HTTPS for Render deployment
+            // Force disable HTTPS for Render deployment - aggressive approach
             Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "");
-            Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "10000"}");
+            Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORTS", "");
+            Environment.SetEnvironmentVariable("HTTPS_PORT", "");
+            Environment.SetEnvironmentVariable("ASPNETCORE_FORCESSL", "false");
+            
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+            Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://0.0.0.0:{port}");
+            Environment.SetEnvironmentVariable("HTTP_PORTS", port);
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // For Render deployment, completely override any HTTPS configuration
+            // Completely disable HTTPS in production
             if (!builder.Environment.IsDevelopment())
             {
-                // Clear all Kestrel configuration from appsettings
-                builder.Configuration["Kestrel"] = null;
-                builder.Configuration["Kestrel:Endpoints:Http"] = null;
-                builder.Configuration["Kestrel:Endpoints:Https"] = null;
+                // Remove all Kestrel configuration
+                builder.Configuration.GetSection("Kestrel").GetChildren().ToList().ForEach(child => 
+                {
+                    builder.Configuration[child.Path] = null;
+                });
                 
-                // Set explicit HTTP-only URL
-                var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+                // Force HTTP-only configuration
                 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
                 
-                // Override any default Kestrel behavior
-                builder.WebHost.UseKestrel(options =>
+                // Override Kestrel configuration completely
+                builder.WebHost.ConfigureKestrel(options =>
                 {
-                    options.ListenAnyIP(int.Parse(port));
+                    options.Configure(builder.Configuration.GetSection("Kestrel"), reloadOnChange: false);
+                    options.ListenAnyIP(int.Parse(port), listenOptions =>
+                    {
+                        // Explicitly configure as HTTP only
+                    });
                 });
             }
             else
