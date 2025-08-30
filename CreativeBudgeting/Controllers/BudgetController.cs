@@ -292,7 +292,7 @@ namespace CreativeBudgeting.Controllers
                 DueDate = dto.DueDate,
                 UserId = dto.UserId,
                 CategoryId = dto.CategoryId,
-                SubcategoryId = dto.SubcategoryId ?? 66,
+                SubcategoryId = dto.SubcategoryId, // Remove the ?? 66 - allow null
                 PaycheckId = dto.PaycheckId
             };
 
