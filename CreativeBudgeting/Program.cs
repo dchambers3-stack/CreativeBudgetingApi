@@ -32,12 +32,28 @@ namespace CreativeBudgeting
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // For Render deployment, clear any HTTPS configuration
+            if (!builder.Environment.IsDevelopment())
+            {
+                builder.Configuration["Kestrel:Endpoints:Https"] = null;
+                builder.WebHost.UseUrls($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "10000"}");
+            }
+
             // Configure Kestrel for Render
             builder.WebHost.ConfigureKestrel(options =>
             {
-                var portString = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-                var port = int.Parse(portString);
+                var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "10000");
+                // Clear any existing endpoints and only listen on HTTP
                 options.ListenAnyIP(port);
+                
+                // For Render deployment, disable HTTPS endpoints
+                if (!builder.Environment.IsDevelopment())
+                {
+                    options.ConfigureEndpointDefaults(endpointOptions =>
+                    {
+                        endpointOptions.UseConnectionLogging();
+                    });
+                }
             });
 
             // Add services to the container
@@ -203,7 +219,8 @@ namespace CreativeBudgeting
             else
             {
                 app.UseExceptionHandler("/Error");
-                app.UseHsts();
+                // Remove HSTS for Render deployment - they handle SSL termination
+                // app.UseHsts();
                 app.UseCors("AllowNetlify");
             }
 
