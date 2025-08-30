@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: creative-budgeting-api
+    runtime: dotnet
+    plan: starter # You can upgrade to standard or pro later
+    buildCommand: dotnet restore && dotnet publish -c Release -o out
+    startCommand: dotnet out/CreativeBudgeting.dll
+    healthCheckPath: /api/budget/health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:10000
+      - key: EMAIL_FROM_EMAIL
+        value: dchambers@creativecanvasdesigns.net
+      - key: EMAIL_SMTP_HOST
+        value: smtp.titan.email
+      - key: EMAIL_SMTP_PORT
+        value: 587
+      - key: EMAIL_PASSWORD
+        sync: false # This will be set manually in Render dashboard for security
+
+  - type: pgsql
+    name: creative-budgeting-db
+    databaseName: creative_budgeting
+    user: creative_budgeting_user
+    plan: starter # Free tier available
