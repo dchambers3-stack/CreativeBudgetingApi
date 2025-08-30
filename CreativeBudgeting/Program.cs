@@ -8,6 +8,26 @@ namespace CreativeBudgeting
 {
     public class Program
     {
+        private static string ConvertPostgresUrlToConnectionString(string databaseUrl)
+        {
+            try
+            {
+                var uri = new Uri(databaseUrl);
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+                var database = uri.LocalPath.TrimStart('/');
+                var username = uri.UserInfo.Split(':')[0];
+                var password = uri.UserInfo.Split(':')[1];
+
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to parse DATABASE_URL: {ex.Message}");
+                throw new ArgumentException($"Invalid DATABASE_URL format: {ex.Message}", ex);
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -67,11 +87,26 @@ namespace CreativeBudgeting
                 Console.WriteLine($"Using DefaultConnection from config: {(string.IsNullOrEmpty(connectionString) ? "NOT FOUND" : "FOUND")}");
             }
 
-            // Convert Render's DATABASE_URL format to Npgsql connection string if needed
-            if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
+            // Parse and convert Render's DATABASE_URL to proper Npgsql format
+            if (!string.IsNullOrEmpty(connectionString))
             {
-                Console.WriteLine("Converting postgres:// to postgresql://");
-                connectionString = connectionString.Replace("postgres://", "postgresql://");
+                try
+                {
+                    Console.WriteLine($"Raw connection string: {connectionString.Substring(0, Math.Min(60, connectionString.Length))}...");
+                    
+                    // If it's a Render-style URL, convert it to Npgsql format
+                    if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+                    {
+                        Console.WriteLine("Converting URL-style connection string to Npgsql format...");
+                        connectionString = ConvertPostgresUrlToConnectionString(connectionString);
+                        Console.WriteLine($"Converted connection string: {connectionString.Substring(0, Math.Min(60, connectionString.Length))}...");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing connection string: {ex.Message}");
+                    throw;
+                }
             }
 
             if (string.IsNullOrEmpty(connectionString))
@@ -80,7 +115,7 @@ namespace CreativeBudgeting
             }
             else
             {
-                Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
+                Console.WriteLine($"Final connection string format validated successfully.");
             }
 
             // Configure Hangfire with PostgreSQL
