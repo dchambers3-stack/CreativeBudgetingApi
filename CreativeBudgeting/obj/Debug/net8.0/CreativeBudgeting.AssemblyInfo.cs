@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CreativeBudgeting")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2aa7650629126e3f975aadb161c7dd7e055d37e2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41b74641574f5a97f63de595179a82cca9ceab19")]
 [assembly: System.Reflection.AssemblyProductAttribute("CreativeBudgeting")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CreativeBudgeting")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

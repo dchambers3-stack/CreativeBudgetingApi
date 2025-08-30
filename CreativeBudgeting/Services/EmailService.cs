@@ -15,20 +15,20 @@ namespace CreativeBudgeting.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlContent)
         {
-            // Validate configuration
-            var fromEmail = _configuration["Email:FromEmail"];
-            var smtpHost = _configuration["Email:SmtpHost"];
-            var smtpPort = _configuration["Email:SmtpPort"];
-            var password = _configuration["Email:Password"];
+            // Read from environment variables (Render format)
+            var fromEmail = _configuration["EMAIL_FROM_EMAIL"] ?? _configuration["Email:FromEmail"];
+            var smtpHost = _configuration["EMAIL_SMTP_HOST"] ?? _configuration["Email:SmtpHost"];
+            var smtpPort = _configuration["EMAIL_SMTP_PORT"] ?? _configuration["Email:SmtpPort"];
+            var password = _configuration["EMAIL_PASSWORD"] ?? _configuration["Email:Password"];
 
             if (string.IsNullOrEmpty(fromEmail))
-                throw new InvalidOperationException("Email:FromEmail configuration is missing");
+                throw new InvalidOperationException("EMAIL_FROM_EMAIL configuration is missing");
             if (string.IsNullOrEmpty(smtpHost))
-                throw new InvalidOperationException("Email:SmtpHost configuration is missing");
+                throw new InvalidOperationException("EMAIL_SMTP_HOST configuration is missing");
             if (string.IsNullOrEmpty(smtpPort))
-                throw new InvalidOperationException("Email:SmtpPort configuration is missing");
+                throw new InvalidOperationException("EMAIL_SMTP_PORT configuration is missing");
             if (string.IsNullOrEmpty(password))
-                throw new InvalidOperationException("Email:Password configuration is missing");
+                throw new InvalidOperationException("EMAIL_PASSWORD configuration is missing");
             if (string.IsNullOrEmpty(toEmail))
                 throw new ArgumentException("Recipient email address cannot be null or empty", nameof(toEmail));
 
