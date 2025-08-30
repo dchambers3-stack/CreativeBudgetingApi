@@ -85,22 +85,58 @@ namespace CreativeBudgeting.Controllers
         [HttpPost("user")]
         public async Task<IActionResult> CreateUser([FromBody] AddUserDto dto)
         {
-            if (dto.Hash?.Length < 8 || !IsValidPassword(dto.Hash))
+            try
             {
-                return BadRequest(
-                    "Password must be at least 8 characters long, have at least one special character, and one uppercase letter."
-                );
+                // Validate input
+                if (dto == null)
+                {
+                    return BadRequest("User data is required");
+                }
+
+                if (string.IsNullOrEmpty(dto.Username) || string.IsNullOrEmpty(dto.Email) || string.IsNullOrEmpty(dto.Hash))
+                {
+                    return BadRequest("Username, email, and password are required");
+                }
+
+                // Check if user already exists
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username || u.Email == dto.Email);
+                if (existingUser != null)
+                {
+                    return BadRequest("Username or email already exists");
+                }
+
+                if (dto.Hash?.Length < 8 || !IsValidPassword(dto.Hash))
+                {
+                    return BadRequest(
+                        "Password must be at least 8 characters long, have at least one special character, and one uppercase letter."
+                    );
+                }
+
+                var hashedPassword = _passwordService.HashPassword(dto.Hash);
+                var user = new User
+                {
+                    Username = dto.Username,
+                    Email = dto.Email,
+                    Hash = hashedPassword,
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                
+                return Ok(new
+                {
+                    userId = user.Id,
+                    username = user.Username,
+                    email = user.Email,
+                    message = "User created successfully"
+                });
             }
-            var hashedPassword = _passwordService.HashPassword(dto.Hash);
-            var user = new User
+            catch (Exception ex)
             {
-                Username = dto.Username,
-                Email = dto.Email,
-                Hash = hashedPassword,
-            };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
+                // Log the error but don't expose internal details
+                Console.WriteLine($"CreateUser error: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred while creating the user. Please try again." });
+            }
         }
 
         [HttpPost("{id}/profile-picture")]
