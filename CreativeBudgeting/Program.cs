@@ -202,7 +202,8 @@ namespace CreativeBudgeting
             // For Render, we might not always want to force HTTPS redirect
             if (!app.Environment.IsDevelopment())
             {
-                app.UseHttpsRedirection();
+                // Don't use HTTPS redirect on Render - they handle SSL termination
+                // app.UseHttpsRedirection();
             }
 
             app.UseSession();
