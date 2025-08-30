@@ -1,11 +1,13 @@
-﻿using System.Net;
+﻿using System.Collections;
+using System.Net;
 using System.Text.RegularExpressions;
+using System.Xml;
 using CreativeBudgeting.Models;
-using CreativeBudgeting.Models.Seeds;
 using CreativeBudgeting.Services;
 using CreativeBudgeting.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace CreativeBudgeting.Controllers
 {
@@ -16,7 +18,6 @@ namespace CreativeBudgeting.Controllers
     {
         private readonly BudgetDbContext _context;
         private readonly PasswordService _passwordService;
-        private readonly RecurringService _recurringService;
 
         private bool IsValidPassword(string password)
         {
@@ -31,15 +32,39 @@ namespace CreativeBudgeting.Controllers
             return specialCharRegex.IsMatch(password) && uppercaseRegex.IsMatch(password);
         }
 
-        public BudgetController(
-            BudgetDbContext context,
-            PasswordService passwordService,
-            RecurringService recurringService
-        )
+        public BudgetController(BudgetDbContext context, PasswordService passwordService)
         {
             _context = context;
             _passwordService = passwordService;
-            _recurringService = recurringService;
+        }
+
+        [HttpGet("health")]
+        public async Task<IActionResult> HealthCheck()
+        {
+            try
+            {
+                // Test database connection
+                await _context.Database.CanConnectAsync();
+                
+                return Ok(new
+                {
+                    status = "Healthy",
+                    timestamp = DateTime.UtcNow,
+                    database = "Connected",
+                    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+                    version = "1.0.0"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(503, new
+                {
+                    status = "Unhealthy",
+                    timestamp = DateTime.UtcNow,
+                    database = "Disconnected",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet("users")]
@@ -210,41 +235,59 @@ namespace CreativeBudgeting.Controllers
             return Ok(existingPay);
         }
 
-        [HttpPost("expenses/{paycheckId}")]
+        [HttpPost("expenses/{userId}")]
         public async Task<ActionResult<Expense>> AddExpenses(
-            int paycheckId,
-            [FromBody] AddExpensesDto dto
-        )
+    [FromRoute] int userId,
+    [FromBody] AddExpensesDto dto
+)
         {
             var user = await _context.Users.FindAsync(dto.UserId);
             if (user == null)
             {
                 return NotFound("User not found.");
             }
-            var paycheckExists = await _context.Paychecks.AnyAsync(p => p.Id == paycheckId);
-
-            if (!paycheckExists)
-            {
-                return BadRequest("Invalid PaycheckId.");
-            }
+           
 
             var expense = new Expense
             {
-                Id = dto.Id,
                 Name = dto.Name,
                 Payment = dto.Payment,
+                TotalBalance = dto.TotalBalance,
                 DueDate = dto.DueDate,
                 UserId = dto.UserId,
                 CategoryId = dto.CategoryId,
-                SubcategoryId = dto.SubcategoryId,
-                PaycheckId = paycheckId,
+                SubcategoryId = dto.SubcategoryId ?? 66,
+                PaycheckId = dto.PaycheckId
             };
+
+            if (expense.CategoryId == 10)
+            {
+                expense.Name = "Savings";
+                var savings = await _context.Savings
+                    .FirstOrDefaultAsync(s => s.UserId == expense.UserId);
+
+                if (savings == null)
+                {
+                    savings = new Savings
+                    {
+                        Amount = expense.Payment,
+                        UserId = expense.UserId
+                    };
+                    await _context.Savings.AddAsync(savings);
+                }
+                else
+                {
+                    savings.Amount += expense.Payment;
+                    _context.Savings.Update(savings);
+                }
+            }
 
             _context.Expenses.Add(expense);
             await _context.SaveChangesAsync();
 
-            return Ok(expense);
+            return Ok(new { success = true });
         }
+
 
         [HttpPut("expenses/{userId}")]
         public async Task<ActionResult<Expense>> EditExpense(
@@ -278,14 +321,24 @@ namespace CreativeBudgeting.Controllers
             [FromBody] MarkExpenseAsPaidDto dto
         )
         {
-            var expense = await _context.Expenses.FindAsync(id);
-            if (expense == null)
-                return NotFound();
+            var expense = await _context.Expenses.FirstOrDefaultAsync(e => e.Id == id);
 
+            if (expense == null)
+            {
+                return NotFound("Expense not found.");
+            }
+
+            var prevBalance = expense.TotalBalance ?? 0;
+            var paymentTowardsBalance = expense.Payment;
+            var newBalance = prevBalance - paymentTowardsBalance;
+
+            expense.TotalBalance = newBalance;
             expense.IsPaid = dto.IsPaid;
+
+            _context.Expenses.Update(expense);
             await _context.SaveChangesAsync();
 
-            return Ok(expense);
+            return Ok(new { newBalance, expense });
         }
 
         [HttpGet("expenses/{userId}")]
@@ -312,9 +365,11 @@ namespace CreativeBudgeting.Controllers
                     DueDate = expense.DueDate,
                     CategoryId = expense.CategoryId,
                     CategoryName = expense.Category != null ? expense.Category.Name : null,
-                    SubcategoryId = expense.SubcategoryId,
+                    SubcategoryId = expense.SubcategoryId ?? 0,
                     SubcategoryName = expense.Subcategory != null ? expense.Subcategory.Name : null,
                     IsPaid = expense.IsPaid,
+                    TotalBalance = expense.TotalBalance, 
+                    PaycheckId = expense.PaycheckId
                 })
                 .ToList();
 
@@ -354,7 +409,8 @@ namespace CreativeBudgeting.Controllers
                 IsPaid = expense.IsPaid,
                 Name = expense.Name,
                 Payment = expense.Payment,
-                SubcategoryId = expense.SubcategoryId,
+                TotalBalance = expense.TotalBalance ?? 0,
+                SubcategoryId = expense.SubcategoryId ?? 0,
             };
             return Ok(expenseDto);
         }
@@ -380,12 +436,6 @@ namespace CreativeBudgeting.Controllers
             return Ok(subcategories);
         }
 
-        //[HttpGet("Subcategories/{userId}")]
-        //public async Task<IActionResult> GetSubcategories([FromRoute]int userId)
-        //{
-        //    var content = await _context.Expenses.Where(e => e.UserId == userId).Include(e => e.Subcategory).ToListAsync();
-        //    return Ok(content);
-        //}
         [HttpGet("expenses/paycheck/{paycheckId}")]
         public async Task<ActionResult<IEnumerable<Expense>>> GetExpensesByPaycheck(int paycheckId)
         {
@@ -400,74 +450,87 @@ namespace CreativeBudgeting.Controllers
 
             return Ok(expenses);
         }
-
-        //// POST: api/expenses
-        //[HttpPost("expenses")]
-        //public async Task<ActionResult<Expense>> CreateExpense(Expense expense)
-        //{
-        //    _context.Expenses.Add(expense);
-        //    await _context.SaveChangesAsync();
-
-        //    return CreatedAtAction(nameof(GetExpensesByPaycheck), new { paycheckId = expense.PaycheckId }, expense);
-        //}
-
-        [HttpPost("expenses/{userId}/recurring-expense")]
-        public async Task<ActionResult<RecurringExpenseDto>> AddRecurringExpense(
-            [FromBody] RecurringExpenseDto dto,
-            [FromRoute] int userId
-        )
+        [HttpGet("{userId}/savings")]
+        public async Task<ActionResult<SavingsDto>> GetSavingsAmount(int userId)
         {
-            var recurringExpense = new RecurringExpense
-            {
-                Id = new Guid(),
-                RecurringExpenseName = dto.RecurringExpenseName ?? string.Empty,
-                RecurringAmount = dto.RecurringAmount,
-                FrequencyId = dto.FrequencyId,
-                UserId = userId,
-                PaycheckId = dto.PaycheckId,
-                CategoryId = dto.CategoryId,
-                SubcategoryId = dto.SubcategoryId,
-            };
-            _context.RecurringExpenses.Add(recurringExpense);
-            await _context.SaveChangesAsync();
-            await _recurringService.GenerateMonthlyRecurringExpensesAsync();
-            return Ok(recurringExpense.Id);
-        }
-
-        [HttpGet("expenses/{userId}/recurring-expenses")]
-        public async Task<ActionResult<IEnumerable<RecurringExpenseDto>>> GetRecurringExpenes(
-            [FromRoute] int userId
-        )
-        {
-            var recurringExpenses = await _context
-                .RecurringExpenses.Where(re => re.UserId == userId)
-                .Include(re => re.Frequency)
-                .Select(re => new RecurringExpenseDto
+            var savings = await _context
+                .Savings.Where(s => s.UserId == userId)
+                .Select(s => new SavingsDto
                 {
-                    Id = re.Id,
-                    RecurringExpenseName = re.RecurringExpenseName,
-                    RecurringAmount = re.RecurringAmount,
-                    UserId = re.UserId,
-                    FrequencyId = re.FrequencyId,
-                })
-                .ToListAsync();
+                    Id = s.Id,
+                    Amount = s.Amount,
+                    UserId = s.UserId
 
-            return Ok(recurringExpenses);
+                })
+                .FirstOrDefaultAsync();
+            return Ok(savings);
+        }
+        [HttpPost("savings/{userId}")]
+        public async Task<ActionResult<SavingsDto>> AddSavingsAmount(int userId, [FromBody] SavingsDto dto)
+        {
+            var newAmount = dto.Amount;
+
+            var savings = await _context.Savings
+                .Where(s => s.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            
+            if (savings == null)
+            {
+                savings = new Savings
+                {
+                    UserId = userId,
+                    Amount = newAmount
+                };
+
+                await _context.Savings.AddAsync(savings);
+            }
+            else
+            {
+                savings.Amount += newAmount;
+                _context.Savings.Update(savings);
+
+            }
+
+           
+
+            await _context.SaveChangesAsync();
+
+            var savingsDto = new SavingsDto
+            {
+                Id = savings.Id,
+                Amount = savings.Amount,
+                UserId = savings.UserId
+            };
+
+            return Ok(savingsDto); // Return full SavingsDto
         }
 
-        [HttpDelete("recurring-expense/{id}")]
-        public async Task<ActionResult<int>> DeleteRecurringExpense([FromRoute] Guid id)
+        [HttpPut("savings/{userId}")]
+        public async Task<ActionResult<SavingsDto>> DeductFromSavings(int userId, [FromBody] SavingsDto dto)
         {
-            var recurringExpense = await _context.RecurringExpenses.FirstOrDefaultAsync(re =>
-                re.Id == id
-            );
-            if (recurringExpense == null)
+            var amountToDeduct = dto.Amount;
+            var savings = await _context.Savings.Where(s => s.UserId == userId).FirstOrDefaultAsync();
+            if(savings == null)
             {
-                return NotFound("Expense couldn't be found.");
+                return BadRequest("You can't remove from an non existing saving.");
             }
-            _context.RecurringExpenses.Remove(recurringExpense);
+            if(savings.Amount <= 0)
+            {
+                return BadRequest("You can't deduct savings lower than zero.");
+            }
+            savings.Amount -= amountToDeduct;
+            _context.Savings.Update(savings);
             await _context.SaveChangesAsync();
-            return Ok(recurringExpense.Id);
+            var savingsDto = new SavingsDto
+            {
+                Id = savings.Id,
+                Amount = savings.Amount,
+                UserId = savings.UserId
+            };
+            return Ok(savingsDto);
         }
     }
+
+
 }

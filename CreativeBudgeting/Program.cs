@@ -10,82 +10,140 @@ namespace CreativeBudgeting
     {
         public static async Task Main(string[] args)
         {
-            await Task.CompletedTask;
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Configure Kestrel for Render
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+                options.ListenAnyIP(int.Parse(port));
+            });
 
-            builder.Services.AddHangfireServer();
-            builder.Services.AddScoped<RecurringService>();
+            // Add services to the container
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddControllers();
-            builder
-                .Services.AddControllers()
+            
+            builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 });
 
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            // Configure CORS for Render deployment
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowNetlify", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "https://creativebudgeting.netlify.app", // Replace with your actual Netlify URL
+                            "http://localhost:4200", // For local Angular development
+                            "http://localhost:5000"  // For local testing
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
+                
+                // For development/testing
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                });
+            });
+
+            // Database connection - Render provides DATABASE_URL environment variable
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+                                   ?? builder.Configuration.GetConnectionString("DefaultConnection");
+            
+            // Configure Hangfire with PostgreSQL
             builder.Services.AddHangfire(config =>
             {
                 config.UsePostgreSqlStorage(connectionString);
             });
+            builder.Services.AddHangfireServer();
 
+            // Configure Entity Framework with PostgreSQL
             builder.Services.AddDbContext<BudgetDbContext>(options =>
-                options.UseNpgsql(connectionString)
-            );
+                options.UseNpgsql(connectionString));
 
+            // Register services
             builder.Services.AddScoped<PasswordService>();
+            builder.Services.AddScoped<GlobalMethodService>();
+            
+            // Email service registration
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddScoped<IEmailService, MockEmailService>();
+            }
+            else
+            {
+                builder.Services.AddScoped<IEmailService, EmailService>();
+            }
+            
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
-            });
-
-            builder.Services.AddCors(opt =>
-            {
-                opt.AddPolicy(
-                    "AllowLocalHost",
-                    policy =>
-                    {
-                        policy
-                            .WithOrigins(
-                                "http://localhost:4200",
-                                "http://localhost:5000",
-                                "http://localhost:60176"
-                            )
-                            .AllowAnyMethod()
-                            .AllowAnyHeader();
-                    }
-                );
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
 
             var app = builder.Build();
-            // Schedule (1st of every month)
 
-            app.UseCors("AllowLocalHost"); // Ensure CORS is set before UseAuthorization
-            app.UseSession();
-            //app.UseAuthorization();
-
+            // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment())
             {
+                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                app.UseHangfireDashboard();
+                app.UseCors("AllowAll");
+            }
+            else
+            {
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
+                app.UseCors("AllowNetlify");
             }
 
-            app.UseHttpsRedirection();
+            // For Render, we might not always want to force HTTPS redirect
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
+            app.UseSession();
             app.UseRouting();
             app.MapControllers();
-            app.UseHangfireDashboard(); // Add Hangfire Dashboard middleware
-            RecurringJob.AddOrUpdate<RecurringService>(
-                "generate-monthly-recurring-expenses", // Unique job ID
-                service => service.GenerateMonthlyRecurringExpensesAsync(), // Method to run
-                Cron.Monthly // testing purposes
-            );
 
-            app.Run();
+            // Auto-migrate database on startup
+            using (var scope = app.Services.CreateScope())
+            {
+                try
+                {
+                    var context = scope.ServiceProvider.GetRequiredService<BudgetDbContext>();
+                    await context.Database.MigrateAsync();
+
+                    // Initialize Hangfire jobs
+                    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+                    var globalMethodService = scope.ServiceProvider.GetRequiredService<GlobalMethodService>();
+
+                    recurringJobManager.AddOrUpdate(
+                        "MarkExpensesUnpaidMonthly",
+                        () => globalMethodService.MarkAllExpensesUnpaidAsync(),
+                        "0 0 1 * *"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    app.Logger.LogError(ex, "Failed to initialize database or Hangfire jobs");
+                }
+            }
+
+            await app.RunAsync();
         }
     }
 }

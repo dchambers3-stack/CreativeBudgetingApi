@@ -50,6 +50,14 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "FakeItEasy": {
+              "target": "Package",
+              "version": "[8.3.0, )"
+            },
+            "FluentAssertions": {
+              "target": "Package",
+              "version": "[8.5.0, )"
+            },
             "Hangfire": {
               "target": "Package",
               "version": "[1.8.20, )"
@@ -65,6 +73,10 @@
             "Hangfire.SqlServer": {
               "target": "Package",
               "version": "[1.8.20, )"
+            },
+            "MailKit": {
+              "target": "Package",
+              "version": "[4.13.0, )"
             },
             "Microsoft.AspNetCore.Identity": {
               "target": "Package",
@@ -128,7 +140,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

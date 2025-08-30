@@ -25,25 +25,21 @@ namespace CreativeBudgeting.Controllers
                     PayDate = p.PayDate,
                     Amount = p.Amount,
                     
-                    Expenses = p.Expenses.Select(e => new ExpenseResponseDto
-                    {
-                        Id = e.Id,
-                        Name = e.Name,
-                        Payment = e.Payment,
-                        DueDate = e.DueDate,
-                        CategoryId = e.CategoryId,
-                        CategoryName = e.Category.Name,
-                        SubcategoryId = e.SubcategoryId,
-                        SubcategoryName = e.Subcategory.Name,
-                        PaycheckId = e.PaycheckId,
-                        UserId = e.UserId,
-                        IsPaid = e.IsPaid
-                        
-                    }).ToList()
+                   
                 })
                 .ToListAsync();
 
            
+
+            return Ok(paychecks);
+        }
+        [HttpGet("{userId}/budget")]
+        public async Task<IActionResult> GetPaychecksForBudget([FromRoute] int userId)
+        {
+            var paychecks = await _context.Paychecks
+                .Where(p => p.UserId == userId)
+                .Include(p => p.Expenses)
+                .ToListAsync();
 
             return Ok(paychecks);
         }
@@ -63,24 +59,10 @@ namespace CreativeBudgeting.Controllers
                 PayDate = dto.PayDate.ToUniversalTime(),
                 Amount = dto.Amount,
                 UserId = userId
+                
             };
 
-            // If the DTO includes expenses, add them to the paycheck
-            if (dto.Expenses != null && dto.Expenses.Any())
-            {
-                var expenses = dto.Expenses.Select(e => new Expense
-                {
-                    Name = e.Name,
-                    Payment = e.Payment,
-                    DueDate = e.DueDate,
-                    UserId = userId,
-                    SubcategoryId = e.SubcategoryId,
-                    CategoryId = e.CategoryId,
-                    PaycheckId = paycheck.Id // Associate with the created paycheck
-                }).ToList();
-
-                paycheck.Expenses = expenses;
-            }
+            
 
             // Add the paycheck to the context and save
             _context.Paychecks.Add(paycheck);

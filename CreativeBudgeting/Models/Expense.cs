@@ -11,13 +11,14 @@ namespace CreativeBudgeting.Models
         
         public string? Name { get; set; }
         public double Payment { get; set; }
+        public double? TotalBalance { get; set; }
         [Column("due_date")]
         public string? DueDate { get; set; }
 
         [ForeignKey(nameof(UserId))]
         [JsonIgnore]
         public virtual User? User { get; set; }
-        public int SubcategoryId { get; set; }
+        public int? SubcategoryId { get; set; }
         [ForeignKey("SubcategoryId")]
 
         public virtual Subcategory? Subcategory { get; set; }
@@ -27,12 +28,6 @@ namespace CreativeBudgeting.Models
         public int? PaycheckId { get; set; }
         [ForeignKey("PaycheckId")]
         public Paycheck? Paycheck { get; set; }
-        public Guid? RecurringExpenseId { get; set; }
-
-        [ForeignKey(nameof(RecurringExpenseId))]
-        public virtual RecurringExpense? RecurringExpense { get; set; }
         public bool IsPaid { get; set; } = false;
-
-
     }
 }

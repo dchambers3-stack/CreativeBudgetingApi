@@ -10,6 +10,7 @@ namespace CreativeBudgeting.Models
 
         [Required]
         public int UserId { get; set; }
+       
 
         [Required]
         public DateTime PayDate { get; set; }

@@ -14,6 +14,6 @@ namespace CreativeBudgeting.ViewModels
 
        
         public double Amount { get; set; }
-        public List<ExpenseResponseDto>? Expenses { get; set; } 
+       
     }
 }

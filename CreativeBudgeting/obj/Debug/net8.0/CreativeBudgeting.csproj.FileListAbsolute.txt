@@ -231,4 +231,12 @@ C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\De
 C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\Dapper.dll
 C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\Hangfire.PostgreSql.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\obj\Debug\net8.0\CreativeBudgeting.sourcelink.json
 C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\Castle.Core.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\FakeItEasy.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\FluentAssertions.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\MailKit.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\MimeKit.dll
+C:\Users\daniel.chambers\source\repos\CreativeBudgeting\CreativeBudgeting\bin\Debug\net8.0\appsettings.Production.json

@@ -128,11 +128,11 @@ namespace CreativeBudgeting.Migrations
                     b.Property<double>("Payment")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid?>("RecurringExpenseId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("SubcategoryId")
                         .HasColumnType("integer");
+
+                    b.Property<double?>("TotalBalance")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
@@ -144,13 +144,48 @@ namespace CreativeBudgeting.Migrations
 
                     b.HasIndex("PaycheckId");
 
-                    b.HasIndex("RecurringExpenseId");
-
                     b.HasIndex("SubcategoryId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("CreativeBudgeting.Models.HelpdeskTicket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TicketSeverityId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketSeverityId");
+
+                    b.ToTable("HelpdeskTickets");
                 });
 
             modelBuilder.Entity("CreativeBudgeting.Models.Paycheck", b =>
@@ -204,51 +239,25 @@ namespace CreativeBudgeting.Migrations
                     b.ToTable("personal_info", (string)null);
                 });
 
-            modelBuilder.Entity("CreativeBudgeting.Models.RecurringExpense", b =>
+            modelBuilder.Entity("CreativeBudgeting.Models.Savings", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int?>("CategoryId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("FrequencyId")
-                        .HasColumnType("integer")
-                        .HasColumnName("frequency_id");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("PaycheckId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("RecurringAmount")
-                        .HasColumnType("numeric")
-                        .HasColumnName("recurring_amount");
-
-                    b.Property<string>("RecurringExpenseName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("recurring_expense_name");
-
-                    b.Property<int?>("SubcategoryId")
-                        .HasColumnType("integer");
+                    b.Property<double>("Amount")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("FrequencyId");
-
-                    b.HasIndex("PaycheckId");
-
-                    b.HasIndex("SubcategoryId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("recurring_expenses", (string)null);
+                    b.ToTable("Savings");
                 });
 
             modelBuilder.Entity("CreativeBudgeting.Models.Seeds.RecurringFrequency", b =>
@@ -723,6 +732,22 @@ namespace CreativeBudgeting.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CreativeBudgeting.Models.TicketSeverity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TicketSeverities");
+                });
+
             modelBuilder.Entity("CreativeBudgeting.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -763,10 +788,6 @@ namespace CreativeBudgeting.Migrations
                         .WithMany("Expenses")
                         .HasForeignKey("PaycheckId");
 
-                    b.HasOne("CreativeBudgeting.Models.RecurringExpense", "RecurringExpense")
-                        .WithMany()
-                        .HasForeignKey("RecurringExpenseId");
-
                     b.HasOne("CreativeBudgeting.Models.Subcategory", "Subcategory")
                         .WithMany()
                         .HasForeignKey("SubcategoryId")
@@ -783,11 +804,18 @@ namespace CreativeBudgeting.Migrations
 
                     b.Navigation("Paycheck");
 
-                    b.Navigation("RecurringExpense");
-
                     b.Navigation("Subcategory");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CreativeBudgeting.Models.HelpdeskTicket", b =>
+                {
+                    b.HasOne("CreativeBudgeting.Models.TicketSeverity", "TicketSeverity")
+                        .WithMany()
+                        .HasForeignKey("TicketSeverityId");
+
+                    b.Navigation("TicketSeverity");
                 });
 
             modelBuilder.Entity("CreativeBudgeting.Models.Paycheck", b =>
@@ -812,39 +840,13 @@ namespace CreativeBudgeting.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CreativeBudgeting.Models.RecurringExpense", b =>
+            modelBuilder.Entity("CreativeBudgeting.Models.Savings", b =>
                 {
-                    b.HasOne("CreativeBudgeting.Models.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId");
-
-                    b.HasOne("CreativeBudgeting.Models.Seeds.RecurringFrequency", "Frequency")
-                        .WithMany()
-                        .HasForeignKey("FrequencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CreativeBudgeting.Models.Paycheck", "Paycheck")
-                        .WithMany()
-                        .HasForeignKey("PaycheckId");
-
-                    b.HasOne("CreativeBudgeting.Models.Subcategory", "Subcategory")
-                        .WithMany()
-                        .HasForeignKey("SubcategoryId");
-
                     b.HasOne("CreativeBudgeting.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Frequency");
-
-                    b.Navigation("Paycheck");
-
-                    b.Navigation("Subcategory");
 
                     b.Navigation("User");
                 });

@@ -13,9 +13,9 @@ namespace CreativeBudgeting
         public DbSet<Subcategory> Subcategories { get; set; }
         public DbSet<Paycheck> Paychecks { get; set; }
         public DbSet<RecurringFrequency> RecurringFrequencies { get; set; }
-        public DbSet<RecurringExpense> RecurringExpenses { get; set; }
-
-
+        public DbSet<HelpdeskTicket> HelpdeskTickets { get; set; }
+        public DbSet<TicketSeverity> TicketSeverities { get; set; }
+        public DbSet<Savings> Savings { get; set; }
         public BudgetDbContext(DbContextOptions<BudgetDbContext> options) : base(options)
         {
         }
@@ -70,16 +70,6 @@ namespace CreativeBudgeting
                
                 entity.Property(e => e.FirstName).HasColumnName("first_name");
                 entity.Property(e => e.LastName).HasColumnName("last_name");
-            });
-
-            modelBuilder.Entity<RecurringExpense>(entity =>
-            {
-                entity.ToTable("recurring_expenses");
-                entity.Property(e => e.FrequencyId).HasColumnName("frequency_id");
-                entity.Property(e => e.Id).HasColumnName("id");
-                entity.Property(e => e.RecurringExpenseName).HasColumnName("recurring_expense_name");
-                entity.Property(e => e.RecurringAmount).HasColumnName("recurring_amount");
-
             });
 
             // Categories

@@ -6,6 +6,7 @@
         public int UserId { get; set; }
         public string? Name { get; set; }
         public double Payment { get; set; }
+        public double? TotalBalance { get; set; }
         public string? DueDate { get; set; }
         public int CategoryId { get; set; }
         public string? CategoryName { get; set; }
