@@ -179,6 +179,14 @@ namespace CreativeBudgeting
                 new Subcategory { Id = 64, Name = "Household Supplies", CategoryId = 12 },
                 new Subcategory { Id = 65, Name = "Travel Expenses", CategoryId = 12 }
             );
+
+            // Ticket Severities
+            modelBuilder.Entity<TicketSeverity>().HasData(
+                new TicketSeverity { Id = 1, Value = "Low" },
+                new TicketSeverity { Id = 2, Value = "Medium" },
+                new TicketSeverity { Id = 3, Value = "High" },
+                new TicketSeverity { Id = 4, Value = "Critical" }
+            );
         }
     }
 }

@@ -27,6 +27,20 @@ namespace CreativeBudgeting.Controllers
         {
             try
             {
+                // Validate TicketSeverityId if provided
+                if (ticket.TicketSeverityId.HasValue)
+                {
+                    var severityExists = await _context.TicketSeverities
+                        .AnyAsync(ts => ts.Id == ticket.TicketSeverityId.Value);
+                    
+                    if (!severityExists)
+                    {
+                        // Set to null if invalid TicketSeverityId is provided
+                        ticket.TicketSeverityId = null;
+                        Console.WriteLine($"Invalid TicketSeverityId {ticket.TicketSeverityId} provided, setting to null");
+                    }
+                }
+
                 var helpdeskTicket = new HelpdeskTicket
                 {
                     Id = ticket.Id ?? 0,
