@@ -238,8 +238,30 @@ namespace CreativeBudgeting
                     
                     Console.WriteLine("Database connection test PASSED");
                     app.Logger.LogInformation("Database connection successful. Running migrations...");
-                    await context.Database.MigrateAsync();
-                    app.Logger.LogInformation("Database migrations completed successfully.");
+                    
+                    try
+                    {
+                        await context.Database.MigrateAsync();
+                        app.Logger.LogInformation("Database migrations completed successfully.");
+                        Console.WriteLine("Database migrations completed successfully.");
+                    }
+                    catch (Exception migrationEx)
+                    {
+                        // Log migration error but don't crash the app
+                        app.Logger.LogWarning(migrationEx, "Migration failed, but continuing with app startup: {MigrationError}", migrationEx.Message);
+                        Console.WriteLine($"Migration warning (continuing): {migrationEx.Message}");
+                        
+                        // Try to ensure database is in a usable state
+                        try
+                        {
+                            await context.Database.EnsureCreatedAsync();
+                            Console.WriteLine("Database ensured to exist.");
+                        }
+                        catch (Exception ensureEx)
+                        {
+                            app.Logger.LogWarning(ensureEx, "Could not ensure database exists: {EnsureError}", ensureEx.Message);
+                        }
+                    }
 
                     Console.WriteLine("Starting Hangfire job initialization...");
                     // Initialize Hangfire jobs
@@ -276,7 +298,8 @@ namespace CreativeBudgeting
                         Console.WriteLine($"DATABASE_URL is set (length: {dbUrl.Length})");
                     }
                     
-                    // Don't exit the app, but log the error
+                    // Don't exit the app, but log the error - let it continue starting
+                    app.Logger.LogWarning("Continuing app startup despite database initialization errors.");
                 }
             }
 
