@@ -263,12 +263,39 @@ namespace CreativeBudgeting
                         // Try to ensure database is in a usable state
                         try
                         {
+                            // First try to delete and recreate the database completely
+                            Console.WriteLine("Attempting to recreate database from scratch...");
+                            await context.Database.EnsureDeletedAsync();
                             await context.Database.EnsureCreatedAsync();
-                            Console.WriteLine("Database ensured to exist.");
+                            Console.WriteLine("Database recreated successfully.");
                         }
                         catch (Exception ensureEx)
                         {
-                            app.Logger.LogWarning(ensureEx, "Could not ensure database exists: {EnsureError}", ensureEx.Message);
+                            app.Logger.LogWarning(ensureEx, "Could not recreate database: {EnsureError}", ensureEx.Message);
+                            Console.WriteLine($"Database recreation failed: {ensureEx.Message}");
+                        }
+                    }
+                    
+                    // Verify that Users table exists
+                    try
+                    {
+                        var userCount = await context.Users.CountAsync();
+                        Console.WriteLine($"Users table verified. Current user count: {userCount}");
+                    }
+                    catch (Exception tableCheckEx)
+                    {
+                        Console.WriteLine($"Users table check failed: {tableCheckEx.Message}");
+                        // Last resort: try EnsureCreated
+                        try
+                        {
+                            Console.WriteLine("Last resort: Attempting EnsureCreated...");
+                            await context.Database.EnsureCreatedAsync();
+                            var userCountAfter = await context.Users.CountAsync();
+                            Console.WriteLine($"EnsureCreated successful. User count: {userCountAfter}");
+                        }
+                        catch (Exception lastResortEx)
+                        {
+                            Console.WriteLine($"Last resort failed: {lastResortEx.Message}");
                         }
                     }
 
