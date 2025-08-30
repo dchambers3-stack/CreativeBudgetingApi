@@ -24,29 +24,44 @@ namespace CreativeBudgeting.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
-            // Find the user by username
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == model.Username);
-            if (user == null)
+            try
             {
-                return Unauthorized(new { message = "Invalid credentials" });
+                // Validate input
+                if (model == null || string.IsNullOrEmpty(model.Username) || string.IsNullOrEmpty(model.Password))
+                {
+                    return BadRequest(new { message = "Username and password are required" });
+                }
+
+                // Find the user by username
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == model.Username);
+                if (user == null)
+                {
+                    return Unauthorized(new { message = "Invalid credentials" });
+                }
+
+                // Ensure the password hasher is properly used
+                var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.Hash, model.Password);
+
+                if (passwordVerificationResult != PasswordVerificationResult.Success)
+                {
+                    return Unauthorized(new { message = "Invalid credentials" });
+                }
+
+                // Success — return user info (you might eventually want to return a JWT or token here)
+                return Ok(new
+                {
+                    userId = user.Id,
+                    username = user.Username
+                });
             }
-
-            // Ensure the password hasher is properly used
-            var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.Hash, model.Password);
-
-            if (passwordVerificationResult != PasswordVerificationResult.Success)
+            catch (Exception ex)
             {
-                return Unauthorized(new { message = "Invalid credentials" });
+                // Log the error but don't expose internal details
+                Console.WriteLine($"Login error: {ex.Message}");
+                return StatusCode(500, new { message = "An error occurred during login. Please try again." });
             }
-
-            // Success — return user info (you might eventually want to return a JWT or token here)
-            return Ok(new
-            {
-                userId = user.Id,
-                username = user.Username
-            });
         }
-        
+
 
 
     }

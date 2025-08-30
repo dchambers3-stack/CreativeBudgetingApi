@@ -195,21 +195,21 @@ namespace CreativeBudgeting
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline
+            // CRITICAL: Use CORS first, before any other middleware that might fail
             if (app.Environment.IsDevelopment())
             {
+                app.UseCors("AllowAll");
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI();
                 app.UseHangfireDashboard();
-                app.UseCors("AllowAll");
             }
             else
             {
+                app.UseCors("AllowNetlify");
                 app.UseExceptionHandler("/Error");
                 // Remove HSTS for Render deployment - they handle SSL termination
                 // app.UseHsts();
-                app.UseCors("AllowNetlify");
             }
 
             // For Render, we might not always want to force HTTPS redirect
