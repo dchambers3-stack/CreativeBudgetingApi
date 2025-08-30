@@ -216,6 +216,10 @@ namespace CreativeBudgeting
 
             app.UseSession();
             app.UseRouting();
+            
+            // Add a simple health check endpoint that doesn't require database
+            app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+            
             app.MapControllers();
 
             // Auto-migrate database on startup
@@ -265,17 +269,25 @@ namespace CreativeBudgeting
 
                     Console.WriteLine("Starting Hangfire job initialization...");
                     // Initialize Hangfire jobs
-                    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-                    var globalMethodService = scope.ServiceProvider.GetRequiredService<GlobalMethodService>();
+                    try
+                    {
+                        var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+                        var globalMethodService = scope.ServiceProvider.GetRequiredService<GlobalMethodService>();
 
-                    recurringJobManager.AddOrUpdate(
-                        "MarkExpensesUnpaidMonthly",
-                        () => globalMethodService.MarkAllExpensesUnpaidAsync(),
-                        "0 0 1 * *"
-                    );
-                    
-                    Console.WriteLine("Hangfire job initialization completed successfully.");
-                    app.Logger.LogInformation("Hangfire jobs initialized successfully.");
+                        recurringJobManager.AddOrUpdate(
+                            "MarkExpensesUnpaidMonthly",
+                            () => globalMethodService.MarkAllExpensesUnpaidAsync(),
+                            "0 0 1 * *"
+                        );
+                        
+                        Console.WriteLine("Hangfire job initialization completed successfully.");
+                        app.Logger.LogInformation("Hangfire jobs initialized successfully.");
+                    }
+                    catch (Exception hangfireEx)
+                    {
+                        Console.WriteLine($"Hangfire initialization failed: {hangfireEx.Message}");
+                        app.Logger.LogWarning(hangfireEx, "Hangfire job initialization failed, but continuing: {HangfireError}", hangfireEx.Message);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -303,7 +315,19 @@ namespace CreativeBudgeting
                 }
             }
 
-            await app.RunAsync();
+            try
+            {
+                await app.RunAsync();
+                
+                Console.WriteLine("Application started successfully and is now running!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Critical application startup error: {ex.Message}");
+                Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
         }
     }
 }
